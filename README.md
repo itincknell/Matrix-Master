@@ -2,7 +2,7 @@
 A shell for handling SymPy matrix objects
 
 ## Overview
-The main data mamber of the Matrix_Calc class is a list of 2-tuples containing the 0) title of the matrix and 1) a SymPy 'MutableDenseMatrix' object. The class has extensive methods for manipulating these matrices.
+The main data mamber of the Matrix_Calc class is a list of 2-tuples containing 0) the title of the matrix and 1) a SymPy 'MutableDenseMatrix' object. The class has extensive methods for manipulating these matrices.
 
 The 'create matrix' methods in the main menu allow the user to populate a matrix with SymPy expression objects. 
 The 'replace variables method' in the 'single matrix operations' menu can be used to replace expressions with scalars. This is the easiest method for inputing new matrices. The other option is to type your matrix into a csv file with 1 line per row.
