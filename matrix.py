@@ -13,7 +13,7 @@ def debug_print(message):
 		print(f"[Line {line_number}] - {message}")
 
 def get_name(default):
-	name = input(f"Use: {default} ('1' to except)?\nOr Enter New Name: ")
+	name = input(f"Use: {default} ('1' to except)?\nor enter new name: ")
 	if name == '1':
 		return default
 	else:
@@ -26,15 +26,19 @@ def clear_screen():
 	elif os.name == 'nt':  # For Windows
 		os.system('cls')
 
-def format_item(item, as_decimal=False):
-	return pretty(item)
+def expression_output_options():
+	print("Select Output Format:")
+	print("1) for LaTex")
+	print("2) for pretty SymPy")
+	print("3) for plain SymPy")
+	user_input = input(": ")
 
-def format_expression(expr, as_decimal=False):
-	if expr.free_symbols:
-		return " + ".join([f"{format_item(coeff, as_decimal)}*{var}" for var, coeff in expr.as_coefficients_dict().items()])
+	if user_input == '1':
+		return latex
+	if user_input == '2':
+		return pretty
 	else:
-		return format_item(expr, as_decimal)
-
+		return lambda x: x
 
 class Matrix_Calc:
 	def __init__(self):
@@ -360,6 +364,7 @@ class Matrix_Calc:
 
 			print(f"Enter a value: 'c' to keep constant,'-' to go back, 'x' to quit")
 			symbol = symbols_in_matrix[i]
+
 			user_input = input(f"  >   {pretty(symbol)}: ")
 			if user_input.lower() == 'c':
 				i += 1
@@ -771,6 +776,8 @@ class Matrix_Calc:
 				y_vector.append(value)
 				i += 1
 
+		format_f = expression_output_options()
+
 		clear_screen()
 		# Convert 'y' vector to a column Matrix
 		y_vector = Matrix(y_vector)
@@ -791,10 +798,10 @@ class Matrix_Calc:
 		orthogonal_vector = y_vector - y_hat
 
 		print("\nCalculated vector y_hat:")
-		print(pretty(y_hat))
+		print(format_f(y_hat))
 
 		print("\nOrthogonal vector z = y - y_hat:")
-		print(pretty(orthogonal_vector))
+		print(format_f(orthogonal_vector))
 
 		input("Enter to continue")
 
@@ -876,10 +883,8 @@ class Matrix_Calc:
 			determinant = matrix.det()
 
 			# Print the determinant
-			if '\n' in pretty(determinant):
-				print(f"\nDeterminant of matrix '{matrix_title}': {determinant}\n")
-			else:
-				print(f"\nDeterminant of matrix '{matrix_title}': {pretty(determinant)}\n")
+			format_f = expression_output_options()
+			print(f"\nDeterminant of matrix '{matrix_title}': {format_f(determinant)}\n")
 			input("Enter to continue")
 			return True
 		except ValueError as e:
@@ -1106,11 +1111,7 @@ class Matrix_Calc:
 		# The eigenvects method hangs up if the matrix contains variables instead of constant scalars
 		# Add data validation to ensure this won't happen
 
-		display_option = input("Do you want to display the results as decimal or fraction? Enter 'd' for decimal, 'f' for fraction: ").strip().lower()
-		while display_option not in ['d', 'f']:
-			clear_screen()
-			display_option = input("Invalid input. Enter 'd' for decimal, 'f' for fraction: ").strip().lower()
-		as_decimal = (display_option == 'd')
+		format_f = expression_output_options()
 
 		try:
 			# Calculate the eigenvectors and eigenvalues
@@ -1124,19 +1125,10 @@ class Matrix_Calc:
 			print(f"\nEigenvectors and Eigenvalues of matrix '{matrix_title}':")
 
 			for eigenvalue, multiplicity, vectors in eigenvectors:
-
-				# Not sure why this is here: 
-				# some eigenvalues have bad formatting, this was probably an attempt to fix the formatting
-				if '\n' in pretty(eigenvalue):
-					c = '\n'
-				else:
-					c = ''
-				# 'c' is never used :(
-
-				print(f"Eigenvalue: {format_expression(eigenvalue, as_decimal)}, Multiplicity: {multiplicity}")
+				print(f"Eigenvalue: {format_f(eigenvalue)}, Multiplicity: {format_f(multiplicity)}")
 				print("Eigenvectors:")
 				for vector in vectors:
-					print(pretty([format_expression(item, as_decimal) for item in vector]))
+					print(format_f(vector))
 					print("\n")  # Add an extra newline for formatting
 
 			input("Enter to continue")
@@ -1167,16 +1159,18 @@ class Matrix_Calc:
 		# Extract the symbol used in the characteristic polynomial (usually 'lambda')
 		lamda = char_polynomial.gens[0]
 
+		format_f = expression_output_options()
+
 		# Pretty print the characteristic polynomial
 		print(f"The characteristic polynomial for matrix '{matrix_title}' is:")
-		print(pretty(char_polynomial.as_expr()))
+		print(format_f(char_polynomial.as_expr()))
 		input("Enter to continue")
 
 		# Attempt to factor the characteristic polynomial
 		factored_polynomial = factor(char_polynomial.as_expr())
 		if factored_polynomial != char_polynomial.as_expr():
 			print(f"The factored form of the characteristic polynomial is:")
-			print(pretty(factored_polynomial))
+			print(format_f(factored_polynomial))
 		else:
 			print("The characteristic polynomial could not be factored further.")
 		input("Enter to continue")
@@ -1186,17 +1180,15 @@ class Matrix_Calc:
 		if roots:
 			print("The roots of the characteristic polynomial are:")
 			for root in roots:
-				print(pretty(root))
+				print(format_f(root))
 		else:
 			print("No roots found for the characteristic polynomial.")
 
 		input("Enter to continue")
 		return True
 
-
-
-
 	def diagonalization(self, matrix_num, new=False):
+
 		matrix_title, matrix = self.matrices[matrix_num]
 
 		# Check if the matrix is square, as only square matrices can be diagonalized
@@ -1217,10 +1209,12 @@ class Matrix_Calc:
 			input("Enter to continue")
 			return False
 
+		format_f = expression_output_options()
+
 		# Print the diagonalized matrix and the transformation matrix
 		print(f"Matrix '{matrix_title}' has been diagonalized:")
-		print(f"Transformation matrix P:\n{pretty(P)}")
-		print(f"Diagonalized matrix D:\n{pretty(D)}")
+		print(f"Transformation matrix P:\n{format_f(P)}")
+		print(f"Diagonalized matrix D:\n{format_f(D)}")
 
 		# Overwrite the existing matrix or append a new one based on the 'new' argument
 		if new:
