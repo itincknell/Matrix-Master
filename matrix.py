@@ -360,25 +360,21 @@ class Matrix_Calc:
 
 			print(f"Enter a value: 'c' to keep constant,'-' to go back, 'x' to quit")
 			symbol = symbols_in_matrix[i]
-			while True:
-				user_input = input(f"  >   {pretty(symbol)}: ")
-				if user_input.lower() == 'c':
+			user_input = input(f"  >   {pretty(symbol)}: ")
+			if user_input.lower() == 'c':
+				i += 1
+			elif user_input.lower() == '-' and i != 0:
+				i -= 1
+			elif user_input.lower() == 'x':
+				return False
+			else:
+				try:
+					# Convert input to number or fraction
+					value = sympify(user_input)
+					substitutions[symbol] = value
 					i += 1
-					break
-				elif user_input.lower() == '-' and i != 0:
-					i -= 1
-					break
-				elif user_input.lower() == 'x':
-					return False
-				else:
-					try:
-						# Convert input to number or fraction
-						value = sympify(user_input)
-						substitutions[symbol] = value
-						i += 1
-						break
-					except (SympifyError):
-						invalid = True
+				except (SympifyError):
+					invalid = True
 
 		# Create new matrix with evaluated variables
 		if substitutions != {}:
