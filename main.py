@@ -17,13 +17,13 @@ def main_program():
 	
 def start_user_loop(Matrix_Calc):
 	# Start a loop presenting options to the user
-	invalid = False
+	invalid = ""
 	while True:
 
 		clear_screen()
 		if invalid:
-			print("Invalid selection")
-			invalid = False
+			print(invalid)
+			invalid = ""
 		Matrix_Calc.print()
 
 		print("\nPlease choose an option:")
@@ -33,10 +33,11 @@ def start_user_loop(Matrix_Calc):
 		print("4) >> Matrix Operations")
 		print("5) Create Matrix")
 		print("6) Delete Matrix")
+		print("7) Quit")
 
-		user_input = input("Enter your choice (1, 2, or 3): ")
+		user_input = input("Enter your choice: ")
 		if user_input == '1':
-			Matrix_Calc.load_from_file()
+			invalid = Matrix_Calc.load_from_file()
 		elif user_input == '2':
 			Matrix_Calc.save_to_file()
 		elif user_input == '3':
@@ -47,8 +48,10 @@ def start_user_loop(Matrix_Calc):
 			Matrix_Calc.create_matrix()
 		elif user_input == '6':
 			Matrix_Calc.delete_matrix()
+		elif user_input == '7':
+			return
 		else:
-			invalid = True
+			invalid = "Invalid selection"
 
 def operations(Matrix_Calc):
 	invalid = ""

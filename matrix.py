@@ -57,8 +57,7 @@ class Matrix_Calc:
 		files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.txt')]
 
 		if files == []:
-			print(f"No saved files found")
-			return
+			return "No saved files found"
 		files = sorted(files)
 
 		while True:
@@ -72,7 +71,7 @@ class Matrix_Calc:
 		
 			file_choice = input("Enter the number of the file you want to load or 'x' to cancel: ")
 			if file_choice == 'x':
-				return False
+				return
 			elif file_choice.isdigit() and int(file_choice) - 1 in range(len(files)):
 				break
 			else:
@@ -98,7 +97,7 @@ class Matrix_Calc:
 
 				matrix_choice = input("Enter the number of the matrix to overwrite, 'n' to add a new matrix, or 'x' to cancel: ")
 				if matrix_choice == 'x':
-					return False
+					return
 				elif matrix_choice.isdigit() and int(matrix_choice) - 1 in range(len(self.matrices)):
 					overwrite = True
 					break
@@ -118,7 +117,7 @@ class Matrix_Calc:
 			self.matrices[int(matrix_choice) - 1] = [file_name.replace(folder_path,''), data]
 		else:
 			self.matrices.append([file_name.replace(folder_path,''), data])
-		return True
+		return
 
 	def save_to_file(self):
 
