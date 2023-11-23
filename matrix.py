@@ -883,7 +883,7 @@ class Matrix_Calc:
 
 			# Print the determinant
 			format_f = expression_output_options()
-			print(f"\nDeterminant of matrix '{matrix_title}': {format_f(determinant)}\n")
+			print(f"\nDeterminant of matrix '{matrix_title}':\n{format_f(determinant)}\n")
 			input("Enter to continue")
 			return True
 		except ValueError as e:
@@ -1124,7 +1124,7 @@ class Matrix_Calc:
 			print(f"\nEigenvectors and Eigenvalues of matrix '{matrix_title}':")
 
 			for eigenvalue, multiplicity, vectors in eigenvectors:
-				print(f"Eigenvalue: {format_f(eigenvalue)}, Multiplicity: {format_f(multiplicity)}")
+				print(f"Eigenvalue:\n{format_f(eigenvalue)}, Multiplicity: {format_f(multiplicity)}")
 				print("Eigenvectors:")
 				for vector in vectors:
 					print(format_f(vector))
@@ -1306,7 +1306,7 @@ class Matrix_Calc:
 			first_row += f" [{num_rows} X {num_cols}] "
 
 			# Print the first row of the matrix
-			#first_row = matrix_data[0]
+			# first_row = matrix_data[0]
 
 			# Limit the number of items printed to 6
 			first_row += " ["
@@ -1321,71 +1321,83 @@ class Matrix_Calc:
 			first_row = first_row.strip(", ") + "]"
 			print(first_row)
 
-
-	def print(self,debug_print=False):
-
+	# function for side-by-side printing of matrices
+	def print(self):
+		''' This function should be more robust. Large matrices do not fit in the screen.
+			The code seems overly complicated for what it is trying to do.
+			Would like to add functionalilty to go to a second row.
+		'''
 		if self.matrices == []:
 			print("No Matrices Loaded")
 			return
 
-		# Initialize matrices
-		if debug_print:
-			c = '@'
-		else:
-			c = ' '
+		c = '@' if DEBUG else ' '
 
-		max_len = self.get_length()
+		# matrix_column_widths is the length of the longest column of the loaded matrices
+		matrix_column_widths = self.get_width_arrays()
 
-		max_row = max([m[1].rows for m in self.matrices])
+		
+		max_height = max([m[1].rows for m in self.matrices])
 		matrices = [m[1] for m in self.matrices]
 
-		if debug_print:
-			print(f"max_row = {max_row}")
+		debug_print(f"max_height = {max_height}")
 
-		self.double_headrow(max_len)
+		# print the headers with column indices
+		self.double_headrow(matrix_column_widths)
 		
-		for i in range(max_row):
+		
+		for i in range(max_height):
 			for n, matrix in enumerate(matrices):
-				if debug_print:
-					print(f"\n{matrix}")
+				debug_print(f"\n{matrix}")
 				if i < matrix.rows:
-					if debug_print:
-						print(f"i = {i}, matrix.rows = {matrix.rows}, i < matrix.rows = {i < matrix.rows}")
-						print(f"matrix = {matrix}")
-						print(f"matrix.row(1) = {matrix.row(1)}")
-						print(f"matrix.row(1).tolist() = {matrix.row(1).tolist()}")
-						print(f"matrix.row(1).tolist()[0] = {matrix.row(1).tolist()[0]}")
-					row = matrix.row(i).tolist()[0]
-					m = max_len[n]
-					if n == 0:
-						print(f"{i:>{m[0]}}", end="")
-						print("—" * m[0], end="")
-					else:
-						print(f"{i:>{m[0]*2}}", end="")
-						print("—" * m[0], end="")
-					self.print_row(i, row, m)
 
-				if i >= matrix.rows:
-					if debug_print:
-						print(f"i = {i}, len(matrix) = {len(matrix)}, i >= len(matrix) = {i >= len(matrix)}")
-					m = max_len[n]
+					# brute force debugging
+					debug_print(f"i = {i}, matrix.rows = {matrix.rows}, i < matrix.rows = {i < matrix.rows}")
+					debug_print(f"matrix = {matrix}")
+					debug_print(f"matrix.row(1) = {matrix.row(1)}")
+					debug_print(f"matrix.row(1).tolist() = {matrix.row(1).tolist()}")
+					debug_print(f"matrix.row(1).tolist()[0] = {matrix.row(1).tolist()[0]}")
+					
+					# print row indices
+					row = matrix.row(i).tolist()[0]
+					margin = matrix_column_widths[n]
 					if n == 0:
-						print(c*m[0], end="")
+						print(f"{i:>{min(margin[0],5)}}", end="")
+						print("—" * min(margin[0],5), end="")
 					else:
-						print(c*m[0]*2, end="")
-					print(c*m[0], end="")
+						print(f"{i:>{min(margin[0],5)*2}}", end="")
+						print("—" * min(margin[0],5), end="")
+
+					# print actual row values
+					self.print_row(i, row, margin)
+
+				# print white space if this matrix is shorter than the tallest matrix
+				if i >= matrix.rows:
+					debug_print(f"i = {i}, len(matrix) = {len(matrix)}, i >= len(matrix) = {i >= len(matrix)}")
+					margin = matrix_column_widths[n]
+
+					# this needs to correspond to spacing in double_head_row function
+					if n == 0:
+						print(c*min(margin[0],5), end="")
+					else:
+						print(c*min(margin[0],5)*2, end="")
+					print(c*min(margin[0],5), end="")
 					for j in range(matrix.cols):
-						m = max_len[n][j]
-						print(c*m, end="")
+						margin = matrix_column_widths[n][j]
+						print(c*margin, end="")
 			print()
 
 
-	def print_row(self, index, row, max_len, debug_print=False):
+	def print_row(self, index, row, matrix_column_widths):
+		''' print row with uniform spacing, output fraction forms for rational numbers
+		'''
 		for i, item in enumerate(row):
-			m = max_len[i]
+			margin = matrix_column_widths[i]
 			item_evaluated = N(item)
-			if debug_print:
-				print(f"item = {item}, item_evaluated = {item_evaluated}")
+			
+			debug_print(f"item = {item}, item_evaluated = {item_evaluated}")
+			
+			# if row item is a scalar
 			if item_evaluated.is_number:
 
 				# this crashes if item_evaluated is complex
@@ -1393,28 +1405,35 @@ class Matrix_Calc:
 
 				closest_fraction = Fraction.from_float(item_float).limit_denominator()
 				if abs(closest_fraction - item_float) < 0.01:
-					print(f"{str(closest_fraction).rjust(m)}", end="")
+					print(f"{str(closest_fraction).rjust(margin)}", end="")
 				elif item.evalf() % 1 < 1E-10 or item.evalf() % 1 > 0.9999999999:
-					print(f"{round(item):>{m}}", end="")
+					print(f"{round(item):>{margin}}", end="")
 				elif item.evalf() % 10 < .0000000001 or item.evalf() % 10 > 9.9999999999:
-					print(f"{round(item, -1):>{m}}", end="")
+					print(f"{round(item, -1):>{margin}}", end="")
 				else:
-					print(f"{round(item, precision):>{m}}", end="")
+					print(f"{round(item, precision):>{margin}}", end="")
+
+			# if row item is an expression
 			else:
+				# if SymPy pretty tries to print multiple lines, just use string
 				if "\n" in pretty(item):
-					print(f"{sstr(item).strip():>{m}}", end="")
+					print(f"{sstr(item).strip():>{margin}}", end="")
 				else:
-					print(f"{pretty(item).strip():>{m}}", end="")
+					print(f"{pretty(item).strip():>{margin}}", end="")
 
 
-	def get_col_length(self,col):
+	def get_col_width(self,col):
+		'''	find the widest entry in the column 
+		'''
 		max_len = 3
 		for item in col:
 			item = item[0]
 			item_evaluated = N(item)
+			
+			# if row item is a scalar
 			if item_evaluated.is_number:
 
-				# This crashed is item_evaluated is complex
+				# This crashes if item_evaluated is complex
 				item_float = float(item_evaluated)
 
 				closest_fraction = Fraction.from_float(item_float).limit_denominator()
@@ -1426,74 +1445,91 @@ class Matrix_Calc:
 					max_len = max(max_len,len(f"{round(item, -1):>{max_len}}"))
 				else:
 					max_len = max(max_len,len(f"{round(item, precision):>{max_len}}"))
+
+			# if row item is an expression
 			else:
+				# if SymPy pretty tries to print multiple lines, just use string
 				if "\n" in pretty(item):
 					max_len = max(max_len,len(f"{sstr(item).strip():>{max_len}}"))
 				else:
 					max_len = max(max_len,len(f"{pretty(item).strip():>{max_len}}"))
 		return max_len + 1
 
-
-	def get_length(self,debug_print=False):
+	def get_width_arrays(self):
+		'''	finds the length of the longest row entry for each column for each of the loaded matrices
+			returns a 3d array of the required width for each column to print cleanly for each matrix
+		'''
+		# create a list of empty lists
 		max_len = [[] for _ in range(len(self.matrices))]
 		
 		for i, matrix in enumerate(self.matrices):
 			m = 0
 			for j in range(matrix[1].cols):
-				if debug_print:
-					print(f"i = {i}, j = {j}, matrix = {matrix[0]}")
-					print(f"matrix[1].col(j).tolist()[0] = {matrix[1].col(j).tolist()}")
-				m = max(m,self.get_col_length(matrix[1].col(j).tolist()))
-				if debug_print:
-					print(f"m = {m}")
+				
+				debug_print(f"i = {i}, j = {j}, matrix = {matrix[0]}")
+				debug_print(f"matrix[1].col(j).tolist()[0] = {matrix[1].col(j).tolist()}")
+				
+				m = max(m,self.get_col_width(matrix[1].col(j).tolist()))
+				
+				debug_print(f"m = {m}")
+				
 				max_len[i].append(m)
-			if debug_print:
-				print(f"max_len = {max_len}")
 
-		if debug_print:
-			print(f"max_len = {max_len}")
+			debug_print(f"max_len = {max_len}")
+
+		debug_print(f"max_len = {max_len}")
 
 		return max_len
 
 
-	def double_headrow(self,max_len,debug_print=False):
-		if debug_print:
-			c = '@'
-		else:
-			c = ' '
+	def double_headrow(self,matrix_column_widths):
+		'''	prints the head row with column indices lined up (hopefully) correctly
+		'''
+		c = '@' if DEBUG else ' '
 
 		for i, matrix in enumerate(self.matrices):
-			m = max_len[i][0]
+			margin = min(matrix_column_widths[i][0],5)
+
+			# white space to go before matrix title
 			if i == 0:
-				print(c*(m-1), end="")
+				print(c*(margin-1), end="")
 			else:
-				print(c*(m*2-1), end="")
+				print(c*(margin*2-1), end="")
 			for j in range(matrix[1].cols):
-				m += max_len[i][j]
-			print(f"{matrix[0]:<{m}}", end="")
+				margin += matrix_column_widths[i][j]
+
+			# print matrix title with margin spacing
+			print(f"{matrix[0]:<{margin}}", end="")
 			print(c,end="")
 			
 		print()  # Go to the next line			
 
 		for i, matrix in enumerate(self.matrices):
-			m = max_len[i][0]
+			margin = matrix_column_widths[i][0]
+
+			# white space to go before column indices
 			if i == 0:
-				print(c*(m)*2, end="")
+				print(c*min(margin,5)*2, end="")
 			else:
-				print(c*(m)*3, end="")
+				print(c*(min(margin,5))*3, end="")
+
+			# print column indices with margin spacing
 			for j in range(matrix[1].cols):
-				m = max_len[i][j]
-				print(f"{j:>{m}}", end="")
+				margin = matrix_column_widths[i][j]
+				print(f"{j:>{margin}}", end="")
 			
 		print()  # Go to the next line
 
 		for i, matrix in enumerate(self.matrices):
-			m = max_len[i][0]
+			margin = matrix_column_widths[i][0]
+			# white space to go before | pointing to column
 			if i == 0:
-				print(c*(m)*2, end="")
+				print(c*min(margin,5)*2, end="")
 			else:
-				print(c*(m)*3, end="")
+				print(c*(min(margin,5))*3, end="")
+
+			# print | with margin spacing
 			for j in range(matrix[1].cols):
-				m = max_len[i][j]
-				print(f"{'|':>{m}}", end="")
+				margin = matrix_column_widths[i][j]
+				print(f"{'|':>{margin}}", end="")
 		print()
