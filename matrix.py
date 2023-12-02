@@ -707,6 +707,8 @@ class Matrix_Calc:
 				x_vector.append(value)
 				i += 1
 
+
+
 		# Convert 'x' vector to a column Matrix
 		x_vector = Matrix(x_vector)
 
@@ -1233,11 +1235,12 @@ class Matrix_Calc:
 		invalid = False
 		while True:
 
+			clear_screen()
+
 			if invalid:
 				print(f"Invalid matrix choice. Please choose a letter.")
 				invalid = False
-			clear_screen()
-
+			
 			print()
 			self.print_heading(mode='choice')
 			print()
@@ -1253,37 +1256,88 @@ class Matrix_Calc:
 				invalid = True
 
 
-	def matrix_mult(self):
-		# Get first matrix
-		matrix_1_choice = self.choose_matrix("Choose the left matrix for multiplication ('x' to go back): ")
-		if matrix_1_choice is None:
-			return False
+	def matrix_mult(self, new=False):
 
-		title_A, matrix_A = self.matrices[matrix_1_choice]
-		temp = self.matrices.pop(matrix_1_choice)
+		invalid = ""
+		while True:
 
-		# Get second matrix
-		matrix_2_choice = self.choose_matrix("Choose the right matrix for multiplication ('x' to go back): ")
-		if matrix_2_choice is None:
-			# If operation is canceled, insert the first matrix back
+			#clear_screen()
+			if invalid:
+				input(invalid)
+				invalid = ""
+
+			# Get first matrix
+			matrix_1_choice = self.choose_matrix("Choose the left matrix for multiplication ('x' to go back): ")
+			if matrix_1_choice is None:
+				return False
+
+			title_A, matrix_A = self.matrices[matrix_1_choice]
+			temp = self.matrices.pop(matrix_1_choice)
+
+			# Get second matrix
+			matrix_2_choice = self.choose_matrix("Choose the right matrix for multiplication ('x' to go back): ")
+			if matrix_2_choice is None:
+				# If operation is canceled, insert the first matrix back
+				self.matrices.insert(matrix_1_choice, temp)
+				return False
+
+			title_B, matrix_B = self.matrices[matrix_2_choice]
+
+			# Insert the first matrix back
 			self.matrices.insert(matrix_1_choice, temp)
-			return False
 
-		title_B, matrix_B = self.matrices[matrix_2_choice]
+			# check for valid operands
+			if matrix_B.rows != matrix_A.cols:
+				invalid = "The matrices you selected are incompatible for multiplication"
+				continue
 
-		# Insert the first matrix back
-		self.matrices.insert(matrix_1_choice, temp)
+			# if right operand is a square matrix: allow repeated multiplication
+			if matrix_B.rows == matrix_B.cols:
+				iterations = input("Enter how many times would you like to perform this multiplication: ")
+				try:
+					iterations = int(iterations)
+				except ValueError:
+					iterations = 1
+			else:
+				iterations = 1
 
-		# Multiply matrices
-		try:
-			result = matrix_A * matrix_B  # Use SymPy's built-in multiplication
-		except ValueError:
-			print("Matrix multiplication failed. Please make sure the matrices are compatible for multiplication.")
-			input("Enter to continue")
-			return False
+			result = matrix_A
 
-		self.matrices.append([get_name(f"{title_A}_x_{title_B}"),result])
-		return True
+			for i in range(iterations):
+
+				# Multiply matrices
+				try:
+					result = result * matrix_B  # Use SymPy's built-in multiplication
+
+					# another way of doing repeated multiplications
+					# while seeing the result each time
+					while iterations == 1:
+						
+						clear_screen()
+						print(f"Result of multiplying {title_A} by {title_B}: ")
+						pprint(result)
+
+						if matrix_B.rows != result.cols:
+							break
+
+						user_input = input("Multiply again? 'y' for yes, any other key to stop")
+
+						if user_input.lower() != 'y':
+							break
+						else:
+							result = result * matrix_B
+
+				except ValueError:
+					print("Matrix multiplication failed. Please make sure the matrices are compatible for multiplication.")
+					input("Enter to continue")
+					return False
+
+			if new:
+				self.matrices.append([get_name(f"{title_A}_x_{title_B}"),result])
+			else:
+				self.matrices[matrix_1_choice] = result
+
+			return True
 
 
 
@@ -1352,11 +1406,11 @@ class Matrix_Calc:
 				if i < matrix.rows:
 
 					# brute force debugging
-					debug_print(f"i = {i}, matrix.rows = {matrix.rows}, i < matrix.rows = {i < matrix.rows}")
-					debug_print(f"matrix = {matrix}")
-					debug_print(f"matrix.row(1) = {matrix.row(1)}")
-					debug_print(f"matrix.row(1).tolist() = {matrix.row(1).tolist()}")
-					debug_print(f"matrix.row(1).tolist()[0] = {matrix.row(1).tolist()[0]}")
+					#debug_print(f"i = {i}, matrix.rows = {matrix.rows}, i < matrix.rows = {i < matrix.rows}")
+					#debug_print(f"matrix = {matrix}")
+					#debug_print(f"matrix.row(1) = {matrix.row(1)}")
+					#debug_print(f"matrix.row(1).tolist() = {matrix.row(1).tolist()}")
+					#debug_print(f"matrix.row(1).tolist()[0] = {matrix.row(1).tolist()[0]}")
 					
 					# print row indices
 					row = matrix.row(i).tolist()[0]

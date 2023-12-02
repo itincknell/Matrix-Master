@@ -218,31 +218,82 @@ def single_matrix_operations(Matrix_Calc, matrix_num):
 					else:
 						invalid = f"Invalid operation choice. Please choose between 1 and {len(operations.values())}, or 'x' to go back."
 		else:
-			invalid = "Invalid category choice. Please choose between 1 and 3, or 'x' to go back."
+			invalid = f"Invalid category choice. Please choose between 1 and {len(categories[category_choice].keys())}, or 'x' to go back."
 
 
 def multi_matrix_operations(Matrix_Calc):
 
-	invalid = False
+
+	invalid = ""
 	while True:
 
 		clear_screen()
 		if invalid:
-			print("Invalid selection, please enter '1' or 'x' (more options coming soon)")
-			invalid = False
-		Matrix_Calc.print()
-		print("\nOperations:")
-		print("1) Multiply Matrices")
-		print("x) Go back")
-		user_choice = input("Please enter your choice (1 or 'x'): ")
+			print(invalid)
+			invalid = ""
 
-		if user_choice == '1':
-			if Matrix_Calc.matrix_mult():
-				print("Matrix multiplication successfully executed.\nNew matrix:")
-		elif user_choice.lower() == 'x':
-			return
+		categories = {
+			'1': ('Mutli Matrix Operations', {
+				'1': ('Mutliply matrices', Matrix_Calc.matrix_mult),
+			}),
+			'x': ('Go back', None)
+		}
+
+		'''
+		print("\nCategories of Multi Matrix Operations:")
+		for key, (description, _) in categories.items():
+			print(f"{key}) {description}")
+		'''
+
+		# currently only operation of is multiplication
+		category_choice = '1'
+
+		if category_choice in categories:
+			description, operations = categories[category_choice]
+			if operations is None:
+				return
+			else:
+				while True:
+
+					clear_screen()
+					if invalid:
+						print(invalid)
+						invalid = ""
+					
+					Matrix_Calc.print()
+
+					print(f"\nOperations in {description}:")
+					for key, (op_description, _) in operations.items():
+						print(f"  {key}) {op_description}")
+
+
+					operation_choice = input(f"Please enter your choice of operation (1-{len(operations.values())}, x): ")
+					if operation_choice.lower() == 'x':
+						return # will be break if other categories are added
+
+					elif operation_choice in operations:
+						string = "Create new matrix? ('n' for new, any other key to to overwrite) "
+						make_new = input(f"\n" + "* " * (len(string)//2) + f"\n{string}\n> > > ")
+						make_new = True if make_new.lower() == 'n' else False
+
+						op_description, operation = operations[operation_choice]
+
+						# multi matrix methods will ask user to select matrices
+						if operation(make_new):
+							if make_new:
+								matrix_num = len(Matrix_Calc.matrices) - 1
+							matrix_title, matrix = Matrix_Calc.matrices[matrix_num]
+
+							clear_screen()
+							print(f"{op_description} operation successfully executed.")
+							print(f"\nMatrix {matrix_title}:\n")
+							pprint(matrix)
+							input("\nEnter to continue")
+					else:
+						invalid = f"Invalid operation choice. Enter '1' or 'x' to go back."
 		else:
-			invalid = True
+			invalid = "Invalid category choice. Enter '1' or 'x' to go back."
+
 
 
 #if __name__ == "__main__":
