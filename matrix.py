@@ -1394,7 +1394,7 @@ class Matrix_Calc:
 				first_row += "..."
 
 			# truncate to fit window
-			first_row = first_row[:os.get_terminal_size.columns()]
+			first_row = first_row[:os.get_terminal_size().columns]
 			
 			print(first_row)
 
