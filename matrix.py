@@ -1231,7 +1231,9 @@ class Matrix_Calc:
 	# # # # # # # # # # # # #
 
 	def choose_matrix(self, message, choice1=None):
-
+		'''
+		Get user selection from available matrices
+		'''
 		invalid = False
 		while True:
 
@@ -1246,10 +1248,14 @@ class Matrix_Calc:
 			print()
 			self.print()
 			print()
+
 			matrix_choice = input(message)
+
 			if matrix_choice.lower() == 'x':
 				return None
+
 			matrix_choice = ord(matrix_choice.upper()) - 65
+
 			if matrix_choice in range(len(self.matrices)):
 				return matrix_choice
 			else:
@@ -1257,6 +1263,10 @@ class Matrix_Calc:
 
 
 	def matrix_mult(self, new=False):
+		'''
+		Carries out matrix multiplication; allows iterated multiplication which
+		is useful for computing final states of markov chains.
+		'''
 
 		invalid = ""
 		while True:
@@ -1320,7 +1330,7 @@ class Matrix_Calc:
 						if matrix_B.rows != result.cols:
 							break
 
-						user_input = input("Multiply again? 'y' for yes, any other key to stop")
+						user_input = input("Multiply again? ('y' for yes, any other key to stop)\n")
 
 						if user_input.lower() != 'y':
 							break
@@ -1345,6 +1355,9 @@ class Matrix_Calc:
 	# # # # # # # # # 
 
 	def print_heading(self, mode=None):
+		'''
+		Display matrices in a compact list for selection
+		'''
 		for i in range(len(self.matrices)):
 
 			file_name, matrix_data = self.matrices[i]
@@ -1359,91 +1372,116 @@ class Matrix_Calc:
 			num_rows, num_cols = matrix_data.shape
 			first_row += f" [{num_rows} X {num_cols}] "
 
-			# Print the first row of the matrix
-			# first_row = matrix_data[0]
-
 			# Limit the number of items printed to 6
 			first_row += " ["
 			for i in range(min(matrix_data.shape[1],6)):
+
+				# Use SymPy string is pretty expression takes > 1 line
 				if "\n" in pretty(matrix_data[0,i]):
 					first_row += sstr(matrix_data[0,i])
+
+				# SymPy pretty print if uses 1 line
 				else:
 					first_row += pretty(matrix_data[0,i])
+
 				first_row += ", "
-			if matrix_data.shape[1] > 6:
-				first_row += "..."	
+
+			# add closing bracket, remove comma
 			first_row = first_row.strip(", ") + "]"
+
+			# truncate after 6
+			if matrix_data.shape[1] > 6:
+				first_row += "..."
+
+			# truncate to fit window
+			first_row = first_row[:os.get_terminal_size.columns()]
+			
 			print(first_row)
 
-	# function for side-by-side printing of matrices
+	
 	def print(self):
-		''' This function should be more robust. Large matrices do not fit in the screen.
-			The code seems overly complicated for what it is trying to do.
-			Would like to add functionalilty to go to a second row.
+		''' 
+		method for side-by-side printing of matrices
 		'''
 		if self.matrices == []:
 			print("No Matrices Loaded")
 			return
+		else:
+			print("Your Loaded Matrices:\n")
 
 		c = '@' if DEBUG else ' '
 
 		# matrix_column_widths is the length of the longest column of the loaded matrices
 		matrix_column_widths = self.get_width_arrays()
 
-		
-		max_height = max([m[1].rows for m in self.matrices])
-		matrices = [m[1] for m in self.matrices]
+		# to avoid overflowing the terminal window, prints matrices in multiple levels (rows)
+		# first: create a list of tuples of beginning end indices of each levels
+		first = 0
+		window_size = os.get_terminal_size().columns
+		current_row_size = 0
+		level_indices = []
 
-		debug_print(f"max_height = {max_height}")
+		for i, width_array in enumerate(matrix_column_widths):
+			current_row_size += min(width_array[0],5) * 2 + sum(width_array)
 
-		# print the headers with column indices
-		self.double_headrow(matrix_column_widths)
-		
-		
-		for i in range(max_height):
-			for n, matrix in enumerate(matrices):
-				debug_print(f"\n{matrix}")
-				if i < matrix.rows:
+			if current_row_size >= window_size:
+				level_indices.append((first,i))
+				current_row_size = min(width_array[0],5) * 2 + sum(width_array)
+				first = i
 
-					# brute force debugging
-					#debug_print(f"i = {i}, matrix.rows = {matrix.rows}, i < matrix.rows = {i < matrix.rows}")
-					#debug_print(f"matrix = {matrix}")
-					#debug_print(f"matrix.row(1) = {matrix.row(1)}")
-					#debug_print(f"matrix.row(1).tolist() = {matrix.row(1).tolist()}")
-					#debug_print(f"matrix.row(1).tolist()[0] = {matrix.row(1).tolist()[0]}")
-					
-					# print row indices
-					row = matrix.row(i).tolist()[0]
-					margin = matrix_column_widths[n]
-					if n == 0:
-						print(f"{i:>{min(margin[0],5)}}", end="")
-						print("—" * min(margin[0],5), end="")
-					else:
-						print(f"{i:>{min(margin[0],5)*2}}", end="")
-						print("—" * min(margin[0],5), end="")
+		level_indices.append((first,i + 1))
 
-					# print actual row values
-					self.print_row(i, row, margin)
+		for start, stop in level_indices:
 
-				# print white space if this matrix is shorter than the tallest matrix
-				if i >= matrix.rows:
-					debug_print(f"i = {i}, len(matrix) = {len(matrix)}, i >= len(matrix) = {i >= len(matrix)}")
-					margin = matrix_column_widths[n]
+			# retrieve height of tallest matrix
+			max_height = max([m[1].rows for m in self.matrices[start:stop]])
+			matrices = [m[1] for m in self.matrices[start:stop]]
 
-					# this needs to correspond to spacing in double_head_row function
-					if n == 0:
+			debug_print(f"max_height = {max_height}")
+
+			# print the headers with column indices
+			self.double_headrow(matrix_column_widths[start:stop], start, stop)
+			
+			
+			for i in range(max_height):
+				for n, matrix in enumerate(matrices):
+					debug_print(f"\n{matrix}")
+					if i < matrix.rows:
+						
+						# print row indices
+						row = matrix.row(i).tolist()[0]
+						margin = matrix_column_widths[start + n]
+						if n == 0:
+							print(f"{i:>{min(margin[0],5)}}", end="")
+							print("—" * min(margin[0],5), end="")
+						else:
+							print(f"{i:>{min(margin[0],5)*2}}", end="")
+							print("—" * min(margin[0],5), end="")
+
+						# print actual row values
+						self.print_row(i, row, margin)
+
+					# print white space if this matrix is shorter than the tallest matrix
+					if i >= matrix.rows:
+						debug_print(f"i = {i}, len(matrix) = {len(matrix)}, i >= len(matrix) = {i >= len(matrix)}")
+						margin = matrix_column_widths[start + n]
+
+						# this needs to correspond to spacing in double_head_row function
+						if n == 0:
+							print(c*min(margin[0],5), end="")
+						else:
+							print(c*min(margin[0],5)*2, end="")
 						print(c*min(margin[0],5), end="")
-					else:
-						print(c*min(margin[0],5)*2, end="")
-					print(c*min(margin[0],5), end="")
-					for j in range(matrix.cols):
-						margin = matrix_column_widths[n][j]
-						print(c*margin, end="")
-			print()
+						for j in range(matrix.cols):
+							margin = matrix_column_widths[start + n][j]
+							print(c*margin, end="")
+				print()
+			print("-" * window_size)
 
 
 	def print_row(self, index, row, matrix_column_widths):
-		''' print row with uniform spacing, output fraction forms for rational numbers
+		''' 
+		print row with uniform spacing, output fraction forms for rational numbers
 		'''
 		for i, item in enumerate(row):
 			margin = matrix_column_widths[i]
@@ -1477,7 +1515,8 @@ class Matrix_Calc:
 
 
 	def get_col_width(self,col):
-		'''	find the widest entry in the column 
+		'''	
+		find the widest entry in the column 
 		'''
 		max_len = 3
 		for item in col:
@@ -1510,8 +1549,9 @@ class Matrix_Calc:
 		return max_len + 1
 
 	def get_width_arrays(self):
-		'''	finds the length of the longest row entry for each column for each of the loaded matrices
-			returns a 3d array of the required width for each column to print cleanly for each matrix
+		'''	
+		finds the length of the longest row entry for each column for each of the loaded matrices
+		returns a 3d array of the required width for each column to print cleanly for each matrix
 		'''
 		# create a list of empty lists
 		max_len = [[] for _ in range(len(self.matrices))]
@@ -1536,12 +1576,13 @@ class Matrix_Calc:
 		return max_len
 
 
-	def double_headrow(self,matrix_column_widths):
-		'''	prints the head row with column indices lined up (hopefully) correctly
+	def double_headrow(self, matrix_column_widths, start, stop):
+		'''	
+		prints the head row with column indices lined up (hopefully) correctly
 		'''
 		c = '@' if DEBUG else ' '
 
-		for i, matrix in enumerate(self.matrices):
+		for i, matrix in enumerate(self.matrices[start:stop]):
 			margin = min(matrix_column_widths[i][0],5)
 
 			# white space to go before matrix title
@@ -1558,7 +1599,7 @@ class Matrix_Calc:
 			
 		print()  # Go to the next line			
 
-		for i, matrix in enumerate(self.matrices):
+		for i, matrix in enumerate(self.matrices[start:stop]):
 			margin = matrix_column_widths[i][0]
 
 			# white space to go before column indices
@@ -1574,7 +1615,7 @@ class Matrix_Calc:
 			
 		print()  # Go to the next line
 
-		for i, matrix in enumerate(self.matrices):
+		for i, matrix in enumerate(self.matrices[start:stop]):
 			margin = matrix_column_widths[i][0]
 			# white space to go before | pointing to column
 			if i == 0:
