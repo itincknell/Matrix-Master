@@ -286,6 +286,7 @@ class Matrix_Calc:
 				matrix = self.create_variable_matrix(width, height)
 			else:
 				invalid = True
+				continue
 				
 			if matrix is None:
 				return False
@@ -846,13 +847,13 @@ class Matrix_Calc:
 		print("\nOrthogonal basis:")
 		orthogonal_matrix = Matrix([vector.T for vector in orthogonal_basis]).T
 		pprint(orthogonal_matrix)
-		#for vector in orthogonal_basis:
-		#	print(pretty(vector))
+		for vector in orthogonal_basis:
+			print(pretty(vector))
 		orthonormal_matrix = Matrix([vector.T for vector in orthonormal_basis]).T
 		print("\nOrthonormal basis:")
 		pprint(orthonormal_matrix)
-		#for vector in orthonormal_basis:
-		#	print(pretty(vector))
+		for vector in orthonormal_basis:
+			print(pretty(vector))
 		input("Enter to continue")
 
 		# Save the orthogonal basis as a new matrix if desired
@@ -1328,6 +1329,7 @@ class Matrix_Calc:
 						pprint(result)
 
 						if matrix_B.rows != result.cols:
+							input("Enter to continue")
 							break
 
 						user_input = input("Multiply again? ('y' for yes, any other key to stop)\n")
@@ -1345,10 +1347,61 @@ class Matrix_Calc:
 			if new:
 				self.matrices.append([get_name(f"{title_A}_x_{title_B}"),result])
 			else:
-				self.matrices[matrix_1_choice] = result
+				self.matrices[matrix_1_choice][1] = result
 
 			return True
 
+
+	def matrix_sub(self, new=False):
+		'''
+		Carries out matrix subtraction.
+		'''
+
+		invalid = ""
+		while True:
+			# Get first matrix
+			matrix_1_choice = self.choose_matrix("Choose the first matrix for subtraction ('x' to go back): ")
+			if matrix_1_choice is None:
+				return False
+
+			title_A, matrix_A = self.matrices[matrix_1_choice]
+			temp = self.matrices.pop(matrix_1_choice)
+
+			# Get second matrix
+			matrix_2_choice = self.choose_matrix("Choose the second matrix for subtraction ('x' to go back): ")
+			if matrix_2_choice is None:
+				self.matrices.insert(matrix_1_choice, temp)
+				return False
+
+			title_B, matrix_B = self.matrices[matrix_2_choice]
+
+			# Insert the first matrix back
+			self.matrices.insert(matrix_1_choice, temp)
+
+			# Check if matrices are of the same size
+			if matrix_A.rows != matrix_B.rows or matrix_A.cols != matrix_B.cols:
+				invalid = "The matrices you selected are incompatible for subtraction (different sizes)"
+				continue
+
+			# Subtract matrices
+			try:
+				result = matrix_A - matrix_B  # Use SymPy's built-in subtraction
+
+				clear_screen()
+				print(f"Result of subtracting {title_B} from {title_A}: ")
+				pprint(result)
+
+			except ValueError:
+				print("Matrix subtraction failed. Please make sure the matrices are compatible for subtraction.")
+				input("Enter to continue")
+				return False
+
+			if new:
+				self.matrices.append([get_name(f"{title_A}_minus_{title_B}"), result])
+			else:
+				self.matrices[matrix_1_choice][1] = result
+
+			return True
 
 
 	# Printing Methods
@@ -1422,11 +1475,11 @@ class Matrix_Calc:
 		level_indices = []
 
 		for i, width_array in enumerate(matrix_column_widths):
-			current_row_size += min(width_array[0],5) * 2 + sum(width_array)
+			current_row_size += min(width_array[0],5) * 3 + max(sum(width_array),len(self.matrices[i][0]))
 
 			if current_row_size >= window_size:
 				level_indices.append((first,i))
-				current_row_size = min(width_array[0],5) * 2 + sum(width_array)
+				current_row_size = min(width_array[0],5) * 3 + max(sum(width_array),len(self.matrices[i][0]))
 				first = i
 
 		level_indices.append((first,i + 1))
@@ -1554,24 +1607,16 @@ class Matrix_Calc:
 		returns a 3d array of the required width for each column to print cleanly for each matrix
 		'''
 		# create a list of empty lists
+
 		max_len = [[] for _ in range(len(self.matrices))]
 		
 		for i, matrix in enumerate(self.matrices):
 			m = 0
 			for j in range(matrix[1].cols):
 				
-				debug_print(f"i = {i}, j = {j}, matrix = {matrix[0]}")
-				debug_print(f"matrix[1].col(j).tolist()[0] = {matrix[1].col(j).tolist()}")
-				
 				m = max(m,self.get_col_width(matrix[1].col(j).tolist()))
 				
-				debug_print(f"m = {m}")
-				
 				max_len[i].append(m)
-
-			debug_print(f"max_len = {max_len}")
-
-		debug_print(f"max_len = {max_len}")
 
 		return max_len
 

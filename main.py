@@ -234,7 +234,8 @@ def multi_matrix_operations(Matrix_Calc):
 
 		categories = {
 			'1': ('Mutli Matrix Operations', {
-				'1': ('Mutliply matrices', Matrix_Calc.matrix_mult),
+				'1': ('Multiply matrices', Matrix_Calc.matrix_mult),
+				'2': ('Subtract matrices', Matrix_Calc.matrix_sub)
 			}),
 			'x': ('Go back', None)
 		}
@@ -279,16 +280,9 @@ def multi_matrix_operations(Matrix_Calc):
 						op_description, operation = operations[operation_choice]
 
 						# multi matrix methods will ask user to select matrices
-						if operation(make_new):
-							if make_new:
-								matrix_num = len(Matrix_Calc.matrices) - 1
-							matrix_title, matrix = Matrix_Calc.matrices[matrix_num]
+						operation(make_new)
+						# method should also display result before existing
 
-							clear_screen()
-							print(f"{op_description} operation successfully executed.")
-							print(f"\nMatrix {matrix_title}:\n")
-							pprint(matrix)
-							input("\nEnter to continue")
 					else:
 						invalid = f"Invalid operation choice. Enter '1' or 'x' to go back."
 		else:
