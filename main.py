@@ -4,11 +4,12 @@ from matrix import Matrix_Calc, clear_screen
 from math import ceil
 from sympy import pprint
 from pyfiglet import figlet_format
+import os
 
 def main_program():
 	clear_screen()
 	print()
-	print(figlet_format("        Matrix Master",font='doom',width=150))
+	print(figlet_format("Matrix Master",font='cybermedium'))
 	print("Welcome to Matrix Master")
 	input("Press Enter to continue")
 
@@ -24,7 +25,7 @@ def start_user_loop(Matrix_Calc):
 		if invalid:
 			print(invalid)
 			invalid = ""
-		Matrix_Calc.print()
+		Matrix_Calc.multi_matrix_print()
 
 		print("\nPlease choose an option:")
 		print("1) Load File")
@@ -34,6 +35,7 @@ def start_user_loop(Matrix_Calc):
 		print("5) Create Matrix")
 		print("6) Delete Matrix")
 		print("7) Quit")
+		print(f"p) Print Mode: {Matrix_Calc.mode}")
 
 		user_input = input("Enter your choice: ")
 		if user_input == '1':
@@ -50,6 +52,9 @@ def start_user_loop(Matrix_Calc):
 			Matrix_Calc.delete_matrix()
 		elif user_input == '7':
 			return
+		elif user_input.lower() == 'p':
+			Matrix_Calc.toggle_print_mode()
+			continue
 		else:
 			invalid = "Invalid selection"
 
@@ -65,13 +70,15 @@ def operations(Matrix_Calc):
 		if not Matrix_Calc.matrices:
 			Matrix_Calc.load_from_file()
 			clear_screen()
-		Matrix_Calc.print()
+		Matrix_Calc.multi_matrix_print()
 
 		print("\nOperations:")
 		print("1) Single matrix operations")
 		print("2) Two matrix operations")
 		print("3) Delete a matrix")
+		print("c) Clear All")
 		print("x) Go back")
+		print(f"p) Print Mode: {Matrix_Calc.mode}")
 		user_choice = input("Please enter your choice (1-3, x): ")
 
 
@@ -117,6 +124,14 @@ def operations(Matrix_Calc):
 			if Matrix_Calc.delete_matrix():
 				return
 
+		if user_choice.lower() == 'p':
+			Matrix_Calc.toggle_print_mode()
+			continue
+
+		if user_choice.lower() == 'c':
+			Matrix_Calc.matrices = []
+			return
+
 		elif user_choice.lower() == 'x':
 			return
 		else:
@@ -134,56 +149,90 @@ def single_matrix_operations(Matrix_Calc, matrix_num):
 
 		matrix_title, matrix = Matrix_Calc.matrices[matrix_num]
 		print(f"\nMatrix {matrix_title}:\n")
-		pprint(matrix)  # pretty print the matrix
+		Matrix_Calc.single_matrix_print(matrix)  # pretty print the matrix
+
+		space = 24
 
 		categories = {
-			'1': ('Scale and Combine, Echelon Form, RREF', {
+			'1': ("{:<{width}}".format('EDIT MATRIX:', width=space) , 'Replace variables, Add, Delete, Modify', {
+					'1': ('Replace variables', Matrix_Calc.eval_variables),
+					'2': ('Add a row', Matrix_Calc.add_row),
+					'3': ('Add a column', Matrix_Calc.add_column),
+					'4': ('Modify a row', Matrix_Calc.modify_row),
+					'5': ('Modify a column', Matrix_Calc.modify_column),
+					'6': ('Modify a cell', Matrix_Calc.modify_cell),
+					'7': ('Modify diagonal', Matrix_Calc.modify_diagonal),
+					'8': ('Modify matrix', Matrix_Calc.modify_matrix),
+					'9': ('Delete a row', Matrix_Calc.delete_row),
+					'10': ('Delete a column', Matrix_Calc.delete_column),
+					'11': ('Create column vector', Matrix_Calc.column_vector),
+					'12': ('Create Matrix', Matrix_Calc.create_matrix)
+			}),
+			'2': ("{:<{width}}".format('ROW OPERATIONS:', width=space) , 'Scale and Combine, Echelon Form, RREF', {
 				'1': ('Scale row', Matrix_Calc.scale_row),
 				'2': ('Rearrange rows', Matrix_Calc.rearrange),
 				'3': ('Scale and combine rows', Matrix_Calc.scale_and_combine),
 				'4': ('Transform to Echelon form', Matrix_Calc.echelon_form),
 				'5': ('Transform to RREF', Matrix_Calc.rref)
-			}),
-			'2': ('Replace variables, Add, Delete, Modify', {
-				'1': ('Replace variables', Matrix_Calc.eval_variables),
-				'2': ('Add a row', Matrix_Calc.add_row),
-				'3': ('Add a column', Matrix_Calc.add_column),
-				'4': ('Modify a row', Matrix_Calc.modify_row),
-				'5': ('Modify a column', Matrix_Calc.modify_column),
-				'6': ('Delete a row', Matrix_Calc.delete_row),
-				'7': ('Delete a column', Matrix_Calc.delete_column),
-			}),
-			'3': ('Scale, Tranpose, Invert, etc.', {
+			}),	
+			'3': ("{:<{width}}".format('MATRIX TRANSFORMS:', width=space) , 'Scale, Tranpose, Invert, etc.', {
 				'1': ('Scale matrix', Matrix_Calc.scale_matrix),
 				'2': ('Transpose matrix', Matrix_Calc.transpose_matrix),
 				'3': ('Raise matrix to a power', Matrix_Calc.raise_matrix_to_power),
 				'4': ('Invert Matrix', Matrix_Calc.invert_matrix),
-				'5': ('Adjugate',Matrix_Calc.adjugate_matrix),
+				'5': ('Cofactor Matrix', Matrix_Calc.cofactor_matrix),
+				'6': ('Adjugate', Matrix_Calc.adjugate_matrix),
+				'7': ('Complex Conjugate', Matrix_Calc.complex_conjugate),
+				'8': ('Exponential of Matrix', Matrix_Calc.exponential_of_matrix),
 			}),
-			'4': ('Eigenvalues, Determinant, Quick Product', {
-				'1': ('Eigenvalues', Matrix_Calc.eigenvects),
-				'2': ('Determinant', Matrix_Calc.determinant),
-				'3': ('Transform Vector',Matrix_Calc.transform_vector),
-				'4': ('Diagonalization', Matrix_Calc.diagonalization),
-				'5': ('Characteristic Polynomial', Matrix_Calc.char_poly),
-				'6': ('Projection onto subspace',Matrix_Calc.projection_onto_subspace),
-				'7': ('Orthogonal, orthonormal basis',Matrix_Calc.gram_schmidt),
+			'4': ("{:<{width}}".format('DIFFERENCE ANGLES:', width=space) , 'Inner Product AᵀA, Projection onto subspace, Gram-Schmidt Process', {
+				'1': ('Inner Product', lambda matrix_num, new=False :Matrix_Calc.matrix_mult((matrix_num, matrix_num), new, reverse_mode=False, transpose=True)),
+				'2': ('Projection onto subspace',Matrix_Calc.projection_onto_subspace),
+				'3': ('Orthogonal, orthonormal basis',Matrix_Calc.gram_schmidt),
+				'4': ('Transform Vector',Matrix_Calc.transform_vector),
+				
 			}),
-			'x': ('Go back', None)
+			'5': ("{:<{width}}".format('EIGENVALUES:', width=space) , 'Determinant, Characteristic Polynomial, Diagonalization', {
+				'1': ('Determinant', Matrix_Calc.determinant),
+				'2': ('A - λ', Matrix_Calc.minus_lambda),
+				'3': ('Eigenvalues', Matrix_Calc.eigenvects),
+				'4': ('Characteristic Polynomial', Matrix_Calc.char_poly),
+				'5': ('Diagonalization', Matrix_Calc.diagonalization),
+				'6': ('Jordan Form', Matrix_Calc.jordan_form)
+			}),
+			'6': ("{:<{width}}".format('SVD:', width=space) , 'Quadratric Form, Singular Value Decompoisition (SVD)', {
+				'1': ('Quadratric Form', Matrix_Calc.quadratic_form),
+				'2': ('Singular Value Decompoisition', Matrix_Calc.svd_decomposition),
+			}),
+			'x': ('Go back','', None),
+			'p': (f"Print Mode: {Matrix_Calc.mode}",'', None)
 		}
 
 		print("\nCategories of Single Matrix Operations:")
-		for key, (description, _) in categories.items():
+		for key, (description, description_list, ops_dict) in categories.items():
+			
+
 			print(f"{key}) {description}")
+			if ops_dict is not None:
+				for op_descr, _ in ops_dict.values():
+					print(f"\t{op_descr}")
+
 
 		category_choice = input("Please enter your choice of category (1-3, x): ")
 
+		if category_choice == 'p':
+			Matrix_Calc.toggle_print_mode()
+			continue
+
 		if category_choice in categories:
-			description, operations = categories[category_choice]
+			description, _, operations = categories[category_choice]
 			if operations is None:
 				return
 			else:
+
 				while True:
+
+					operations.update({'p': (f"Print Mode: {Matrix_Calc.mode}", None)})
 
 					clear_screen()
 					if invalid:
@@ -191,15 +240,30 @@ def single_matrix_operations(Matrix_Calc, matrix_num):
 						invalid = ""
 					
 					print(f"\nMatrix {matrix_title}:\n")
-					pprint(matrix)  # pretty print the matrix
+					Matrix_Calc.single_matrix_print(matrix)  # pretty print the matrix
 
 					print(f"\nOperations in {description}:")
 					for key, (op_description, _) in operations.items():
 						print(f"  {key}) {op_description}")
 					operation_choice = input(f"Please enter your choice of operation (1-{len(operations.values())}, x): ")
+
+					if operation_choice == 'p':
+						Matrix_Calc.toggle_print_mode()
+						continue
+
 					if operation_choice.lower() == 'x':
 						break
-					elif operation_choice in operations:
+
+					# some operations do not generate a new matrix
+					no_matrix_output_ops = [Matrix_Calc.determinant]
+
+					if operation_choice in operations:
+						if operations[operation_choice][1] == Matrix_Calc.create_matrix:
+							if operations[operation_choice][1]():
+								matrix_num = len(Matrix_Calc.matrices) - 1
+								matrix_title, matrix = Matrix_Calc.matrices[matrix_num]
+							continue
+						
 						string = "Create new matrix? ('n' for new, any other key to to overwrite) "
 						make_new = input(f"\n" + "* " * (len(string)//2) + f"\n{string}\n> > > ")
 						make_new = True if make_new.lower() == 'n' else False
@@ -210,7 +274,19 @@ def single_matrix_operations(Matrix_Calc, matrix_num):
 								matrix_num = len(Matrix_Calc.matrices) - 1
 							matrix_title, matrix = Matrix_Calc.matrices[matrix_num]
 
+							if op_description == 'A - λ':
+
+								lambda_remove = ['Eigenvalues','Characteristic Polynomial','Diagonalization']
+								delete_keys = []
+								for key, (op_description, _) in operations.items():
+									if op_description in lambda_remove:
+										delete_keys.append(key)
+								for key in delete_keys:
+									del operations[key]
+
 							clear_screen()
+
+							#if operations[operation_choice][1] not in no_matrix_output_ops: 
 							print(f"{op_description} operation successfully executed.")
 							print(f"\nMatrix {matrix_title}:\n")
 							pprint(matrix)
@@ -218,13 +294,14 @@ def single_matrix_operations(Matrix_Calc, matrix_num):
 					else:
 						invalid = f"Invalid operation choice. Please choose between 1 and {len(operations.values())}, or 'x' to go back."
 		else:
-			invalid = f"Invalid category choice. Please choose between 1 and {len(categories[category_choice].keys())}, or 'x' to go back."
+			invalid = f"Invalid category choice. Please choose from the aviable options, or 'x' to go back."
 
 
 def multi_matrix_operations(Matrix_Calc):
 
-
 	invalid = ""
+	reverse_mode = False
+
 	while True:
 
 		clear_screen()
@@ -232,45 +309,83 @@ def multi_matrix_operations(Matrix_Calc):
 			print(invalid)
 			invalid = ""
 
-		categories = {
-			'1': ('Mutli Matrix Operations', {
-				'1': ('Multiply matrices', Matrix_Calc.matrix_mult),
-				'2': ('Subtract matrices', Matrix_Calc.matrix_sub)
-			}),
-			'x': ('Go back', None)
-		}
+		Matrix_Calc.multi_matrix_print()
 
-		'''
+		space = 24
+
+		categories = {
+			'1': ("{:<{width}}".format('MATRIX ALGEBRA:', width=space) , 'Product, Sum, Dot Product, Merge', {
+				'1': ('Matrix product', Matrix_Calc.matrix_mult),
+				'2': ('Matrix sum', Matrix_Calc.matrix_sum),
+				'3': ('Dot Product', lambda indices, new=False, reverse_mode=False, transpose=True: Matrix_Calc.matrix_mult(indices, new, reverse_mode, transpose=True)),
+				'4': ('Merge Matrices', Matrix_Calc.matrix_merge)
+
+			}),
+			'2': ("{:<{width}}".format('ROW OPERATIONS:', width=space) , 'Replace Variables, Rearrange Rows, Scale and Combine', {
+				'1': ('Replace variables', Matrix_Calc.eval_variables),
+				'2': ('Scale row', Matrix_Calc.scale_row),
+				'3': ('Rearrange rows', Matrix_Calc.rearrange),
+				'4': ('Scale and combine rows', Matrix_Calc.scale_and_combine),
+				'r': (f"Reverse mode: {reverse_mode}", None)
+				}),
+			'x': ('Go back', '', None),
+			'p': (f"Print Mode: {Matrix_Calc.mode}", '', None)
+		}
+		
 		print("\nCategories of Multi Matrix Operations:")
-		for key, (description, _) in categories.items():
-			print(f"{key}) {description}")
-		'''
+		for key, (description, description_list, _) in categories.items():
+			print(f"{key}) {description}{description_list}")
 
 		# currently only operation of is multiplication
-		category_choice = '1'
+		category_choice = input("Please enter your choice of category (1-w, x): ")
+
+		if category_choice.lower() == 'p':
+			Matrix_Calc.toggle_print_mode()
+			continue
 
 		if category_choice in categories:
-			description, operations = categories[category_choice]
+
+			description, _, operations = categories[category_choice]
 			if operations is None:
 				return
 			else:
+				invalid = False
+
+				indices = Matrix_Calc.get_matrix_choices(description)
+
+				if indices == []:
+					continue
+				elif description == 'Matrix Algebra' and len(indices) != 2:
+					continue
+
 				while True:
+
+					operations.update({'p': (f"Print Mode: {Matrix_Calc.mode}", None)})
 
 					clear_screen()
 					if invalid:
 						print(invalid)
 						invalid = ""
-					
-					Matrix_Calc.print()
+
+					Matrix_Calc.print_matrix_indices(indices)
 
 					print(f"\nOperations in {description}:")
 					for key, (op_description, _) in operations.items():
 						print(f"  {key}) {op_description}")
 
-
 					operation_choice = input(f"Please enter your choice of operation (1-{len(operations.values())}, x): ")
 					if operation_choice.lower() == 'x':
-						return # will be break if other categories are added
+						indices = None
+						break
+
+					if operation_choice.lower() == 'p':
+						Matrix_Calc.toggle_print_mode()
+						continue
+
+					if operation_choice.lower() == 'r':
+						reverse_mode = not reverse_mode
+						operations.update({'r': (f"Reverse mode: {reverse_mode}", None)})
+						continue
 
 					elif operation_choice in operations:
 						string = "Create new matrix? ('n' for new, any other key to to overwrite) "
@@ -278,15 +393,22 @@ def multi_matrix_operations(Matrix_Calc):
 						make_new = True if make_new.lower() == 'n' else False
 
 						op_description, operation = operations[operation_choice]
+						
+						result = operation(indices, new=make_new, reverse_mode=reverse_mode)
 
-						# multi matrix methods will ask user to select matrices
-						operation(make_new)
-						# method should also display result before existing
+						if description == 'Matrix Algebra':
+							break
+						elif result:
+							indices = update_indices(indices, len(Matrix_Calc.matrices))
 
 					else:
-						invalid = f"Invalid operation choice. Enter '1' or 'x' to go back."
+						invalid = f"Invalid operation choice."
 		else:
-			invalid = "Invalid category choice. Enter '1' or 'x' to go back."
+			invalid = "Invalid category choice."
+
+def update_indices(indices, matrices_len):
+	choices_length = len(indices)
+	return list(matrices_len - choices_length + i for i in range(choices_length))
 
 
 
